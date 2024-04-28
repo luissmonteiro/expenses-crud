@@ -136,7 +136,7 @@ describe('correct expense creation', () => {
 
         await createExpense(req, res);
 
-        sinon.assert.match(res.json, { message: 'Description must the maximum of 191 chacacters' });
+        sinon.assert.match(res.json, { message: 'Description must have the maximum of 191 chacacters' });
 
         find.restore();
     });});
@@ -515,7 +515,7 @@ describe('updateExpense', () => {
         
                 await updateExpense(req, res);
         
-                sinon.assert.match(res.json, { message: 'Description must the maximum of 191 chacacters' });
+                sinon.assert.match(res.json, { message: 'Description must have the maximum of 191 chacacters' });
         
                 find.restore();
             });});

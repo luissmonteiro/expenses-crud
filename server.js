@@ -1,4 +1,6 @@
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 require("dotenv/config");
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -9,6 +11,22 @@ const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const JWT_SECRET = process.env.JWT_SECRET;
 
+
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'My API',
+      version: '1.0.0',
+    },
+  },
+  apis: ['./src/routes/*.js'], 
+};
+
+const specs = swaggerJsdoc(options);
+
+
+
 const app = express();
 app.use(cookieParser(JWT_SECRET));
 app.use(cookieSession({
@@ -18,6 +36,7 @@ app.use(cookieSession({
 
 app.use(bodyParser.json());
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 app.use('/auth', authRoutes);
 app.use('/api', expenseRoutes);
 

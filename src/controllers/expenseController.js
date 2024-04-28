@@ -53,7 +53,7 @@ const createExpense = async (req, res) => {
     }
 
     if( description.length > 191 || description.length < 1 || typeof description !== 'string'){
-      return res.status(400).json({ message: 'Description must the maximum of 191 chacacters' });}
+      return res.status(400).json({ message: 'Description must have the maximum of 191 chacacters' });}
 
     const userId = req.auth.userId;
     const expense = await Expense.create({ description, value, user: userId, formattedDate });
@@ -121,7 +121,7 @@ const updateExpense = async (req, res) => {
     }
 
     if( description.length > 191 || description.length < 1 || typeof description !== 'string'){
-      return res.status(400).json({ message: 'Description must the maximum of 191 chacacters' });}
+      return res.status(400).json({ message: 'Description must have the maximum of 191 chacacters' });}
 
     const expense = await Expense.findOne({ _id: id, user: userId , deleted: false});
     if (!expense) {
