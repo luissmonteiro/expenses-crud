@@ -111,7 +111,7 @@ const updateExpense = async (req, res) => {
     const formattedDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
     const currentDate = new Date();
 
-    if(formattedDate === 'Invalid Date' || formattedDate > currentDate){
+    if(formattedDate == 'Invalid Date' || formattedDate > currentDate){
       return res.status(400).json({ message: 'Invalid date' });
     }
 
@@ -127,12 +127,14 @@ const updateExpense = async (req, res) => {
       return res.status(404).json({ message: 'Expense not found' });
     }
 
-    expense.description = description;
-    expense.value = value;
-    expense.date = formattedDate;
-    await expense.save();
-    await sendEmail(user.email, expense);
-    return res.status(200).json(expense);
+    const updatedExpense = await Expense.findOneAndUpdate(
+      { _id: id, user: userId },
+      {description: description, value: value, date: formattedDate},
+      { new: true }
+    );
+    // await expense.save();
+    await sendEmail(user.email, updatedExpense);
+    return res.status(200).json(updatedExpense);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -156,7 +158,7 @@ const deleteExpense = async (req, res) => {
       return res.status(404).json({ message: 'Expense not found' });
     }
 
-    res.json({ message: 'Expense deleted!' });
+    return res.status(200).json({ message: 'Expense deleted!' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -32,6 +32,28 @@ describe('authController', () => {
         });
       });
 
+      describe('signup user that already exists', () => {
+        it('should return "User exists" message', async () => {
+          const req = { body: { email: 'testuser@email.com', password: 'testpassword' } };
+          const res = {
+            end: function(){},
+            status: function(s) {this.statusCode = s;
+                this.json = (message) => {this.json = message; return this;};
+                  return this;}
+        };
+      
+          const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'hashedPassword' };
+          const find = sinon.stub(User, 'findOne').returns(mockUser);
+      
+          await signup(req, res);
+      
+          sinon.assert.match(res.json, { message: 'User already exists' });
+      
+          find.restore();
+        });
+      });
+      
+
 
       describe('signup without password', () => {
         it('should return error message', async () => {
@@ -69,7 +91,7 @@ describe('authController', () => {
         });
     });
 
-    describe('login with wrong credentials', () => {
+    describe('login with wrong password', () => {
         it('should return error', async () => {
             const req = { body: { email: 'testuser@email.com', password: 'testpassword' } };
             const res = {
@@ -89,5 +111,22 @@ describe('authController', () => {
             
         });
     });
+
+    describe('login with email that does not exist', () => {
+      it('should return error', async () => {
+          const req = { body: { email: 'testuser@email.com', password: 'testpassword' } };
+          const res = {
+              end: function(){},
+              status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;}
+          };
+          const find = sinon.stub(User, 'findOne').returns(null);
+          
+          await login(req, res);
+          sinon.assert.match(res.json, {message: 'Invalid Credentials'});
+
+          find.restore();
+          
+      });
+  });
 
 });

@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha './test/**/*.js' --recursive --timeout 60000 --exit"
+    "test": "mocha './test/**/*.js' --recursive --timeout 60000 --exit",
+    "coverage": "nyc npm test"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +25,7 @@
     "mocha": "^10.4.0",
     "mongoose": "^8.3.2",
     "nodemailer": "^6.9.13",
+    "nyc": "^15.1.0",
     "sinon": "^17.0.1"
   }
 }
