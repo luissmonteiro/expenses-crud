@@ -27,5 +27,8 @@
     "nodemailer": "^6.9.13",
     "nyc": "^15.1.0",
     "sinon": "^17.0.1"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0"
   }
 }

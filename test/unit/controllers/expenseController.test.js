@@ -1,8 +1,8 @@
 const { expect } = require('chai');
 const sinon = require('sinon');
-const Expense = require('/home/luis/Documents/expenses-crud/src/models/expense.js');
-const User = require('/home/luis/Documents/expenses-crud/src/models/user.js')
-const { createExpense, listExpenses, getEspecificExpense, updateExpense, deleteExpense } = require('/home/luis/Documents/expenses-crud/src/controllers/expenseController');
+const Expense = require('../../../src/models/expense.js');
+const User = require('../../../src/models/user');
+const { createExpense, listExpenses, getEspecificExpense, updateExpense, deleteExpense } = require('../../../src/controllers/expenseController');
 
 describe('createExpense', () => {
 

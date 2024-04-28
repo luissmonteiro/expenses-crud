@@ -61,6 +61,7 @@ const createExpense = async (req, res) => {
     await sendEmail(user.email, expense);
     return res.status(201).json(expense);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: error.message });
   }
 };
