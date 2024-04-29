@@ -25,7 +25,7 @@ git clone https://github.com/luissmonteiro/expenses-crud.git
 2. Install dependencies:
 
 ```bash
-cd expense-tracker-api
+cd expenses-crud
 npm install
 ```
 
@@ -52,7 +52,7 @@ The server will start running at `http://localhost:3000`.
 
 ### Sign Up
 
-To create a new user account, send a POST request to `/api/signup` with the following JSON body:
+To create a new user account, send a POST request to `/auth/signup` with the following JSON body:
 
 ```json
 {
@@ -63,7 +63,7 @@ To create a new user account, send a POST request to `/api/signup` with the foll
 
 ### Log In
 
-To log in to an existing user account, send a POST request to `/api/login` with the following JSON body:
+To log in to an existing user account, send a POST request to `/auth/login` with the following JSON body:
 
 ```json
 {
