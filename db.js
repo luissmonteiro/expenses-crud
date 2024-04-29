@@ -1,8 +1,7 @@
 const mongoose = require("mongoose");
 require("dotenv/config");
 
-const MONGODB_URI =
-  "mongodb://mongoadmin:secret@localhost:27017/EXPENSES_CRUD?authSource=admin";
+const MONGODB_URI = process.env.MONGODB;
 
 mongoose
   .connect(MONGODB_URI, {
