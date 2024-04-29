@@ -19,7 +19,7 @@ Expenses CRUD API is a RESTful API built using Node.js and Express.js for managi
 1. Clone the repository:
 
 ```bash
-git clone <repository_url>
+git clone https://github.com/luissmonteiro/expenses-crud.git
 ```
 
 2. Install dependencies:
