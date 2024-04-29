@@ -2,7 +2,7 @@ Sure! Here's a sample README file for your project:
 
 ---
 
-# Expense Tracker API
+# Expense CRUD API
 
 Expenses CRUD API is a RESTful API built using Node.js and Express.js for managing user authentication and CRUD operations for expenses. This API allows users to sign up, log in, create, retrieve, update, and delete expenses, with authentication mechanisms in place to ensure data security.
 
