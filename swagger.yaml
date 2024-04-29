@@ -1,0 +1,137 @@
+swagger: "2.0"
+info:
+  title: "Expense Tracker API"
+  version: "1.0.0"
+securityDefinitions:
+  bearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: "Bearer token to access these API endpoints"
+    scheme: "bearer"
+    bearerFormat: "JWT"
+paths:
+  /api/create:
+    post:
+      summary: Create a new expense
+      description: Endpoint to create a new expense.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Expense'
+      responses:
+        '201':
+          description: New expense created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          description: Bad request, invalid input
+        '404':
+          description: User not found or Invalid date
+        '500':
+          description: Internal server error
+  /api/list:
+    get:
+      summary: Get a list of expenses
+      description: Endpoint to get a list of all expenses.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully retrieved the list of expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+        '401':
+          description: Unauthorized, invalid token
+        '500':
+          description: Internal server error
+  /api/get/{id}:
+    get:
+      summary: Get a specific expense
+      description: Endpoint to get a specific expense by ID.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID of the expense to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved the expense
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '401':
+          description: Unauthorized, invalid token
+        '404':
+          description: Expense not found
+        '500':
+          description: Internal server error
+  /api/update/{id}:
+    put:
+      summary: Update an expense
+      description: Endpoint to update an expense by ID.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID of the expense to update
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Expense'
+      responses:
+        '200':
+          description: Expense updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '401':
+          description: Unauthorized, invalid token
+        '404':
+          description: Expense not found
+        '500':
+          description: Internal server error
+  /api/delete/{id}:
+    delete:
+      summary: Delete an expense
+      description: Endpoint to delete an expense by ID.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: ID of the expense to delete
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Expense deleted successfully
+        '401':
+          description: Unauthorized, invalid token
+        '404':
+          description: Expense not found
+        '500':
+          description: Internal server error

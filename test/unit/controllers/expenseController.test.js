@@ -1,751 +1,552 @@
-const { expect } = require('chai');
-const sinon = require('sinon');
-const Expense = require('../../../src/models/expense.js');
-const User = require('../../../src/models/user');
-const { createExpense, listExpenses, getEspecificExpense, updateExpense, deleteExpense } = require('../../../src/controllers/expenseController');
+const { expect } = require("chai");
+const sinon = require("sinon");
+const Expense = require("../../../src/models/expense.js");
+const User = require("../../../src/models/user");
+const {
+  createExpense,
+  listExpenses,
+  getEspecificExpense,
+  updateExpense,
+  deleteExpense,
+} = require("../../../src/controllers/expenseController");
+const {
+  mockUser,
+  spyResponse,
+  expenseBody,
+  negativeValueExpense,
+  limitDescriptionSize,
+  wrongTypeValueExpense,
+  biggerDescriptionExpense,
+  dateInFutureBody,
+  dateAsStringBody,
+} = require("./utils");
 
-describe('createExpense', () => {
+describe("createExpense", () => {
+  it("should create a new expense", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      body: expenseBody,
+    };
 
-describe('correct expense creation', () => {
-    it('should create a new expense', async () => {
-        const req = {
-            auth: {
-                userId: 'userId',
-            },
-            body: {
-                "description": "Test expense",
-                "value": 100,
-                "date": "01/01/2022"
-            },
-        };
-        const res = {
-            json: sinon.spy(),
-            status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-        };
+    const create = sinon.stub(Expense, "create").resolves(req);
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-        const create = sinon.stub(Expense, 'create').resolves(req);
-        const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-        const find = sinon.stub(User, 'findOne').returns(mockUser);
+    await createExpense(req, spyResponse);
+    create.restore();
+    find.restore();
 
-        await createExpense(req, res);
+    sinon.assert.match(spyResponse.json.body, req.body);
+  });
 
-        sinon.assert.match(res.json.body, req.body);
+  it("should return 'User not found'", async () => {
+    const req = {
+      auth: {
+        userId: "123",
+      },
+      body: expenseBody,
+    };
+    const find = sinon.stub(User, "findOne").returns(null);
 
-        create.restore();
-        find.restore();
-    });})
+    await createExpense(req, spyResponse);
+    find.restore();
 
-    describe('userId doesnt exist', () => {
-    it('should return error message', async () => {
-        const req = {
-            auth: {
-                userId: '123',
-            },
-            body: {
-                "description": "Test expense",
-                "value": 1,
-                "date": "01/01/2022"
-            },
-        };
-        const res = {
-            json: sinon.spy(),
-            status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-        }
-        const find = sinon.stub(User, 'findOne').returns(null);
+    sinon.assert.match(spyResponse.json, { message: "User not found" });
+  });
 
-        await createExpense(req, res);
+  it('should return "Invalid value"', async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      body: negativeValueExpense,
+    };
 
-        sinon.assert.match(res.json, { message: 'User not found' });
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-        find.restore();
-    });})
+    await createExpense(req, spyResponse);
+    find.restore();
 
-    describe('negative expense value', () => {
-    it('should return "invalid value" message', async () => {
-        const req = {
-            auth: {
-                userId: 'userId',
-            },
-            body: {
-                "description": "Test expense",
-                "value": -1,
-                "date": "01/01/2022"
-            },
-        };
-        const res = {
-            json: sinon.spy(),
-            status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-        }
+    sinon.assert.match(spyResponse.json, { message: "Invalid value" });
+  });
 
-        const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-        const find = sinon.stub(User, 'findOne').returns(mockUser);
+  it('should return "Invalid value" message', async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      body: wrongTypeValueExpense,
+    };
 
-        await createExpense(req, res);
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-        sinon.assert.match(res.json, { message: 'Invalid value' });
+    await createExpense(req, spyResponse);
+    find.restore();
 
-        find.restore();
-    });})
+    sinon.assert.match(spyResponse.json, { message: "Invalid value" });
+  });
 
-    describe('wrong type expense value', () => {
-    it('should return "invalid value" message', async () => {
-        const req = {
-            auth: {
-                userId: 'userId',
-            },
-            body: {
-                "description": "Test expense",
-                "value": "100",
-                "date": "01/01/2022"
-            },
-        };
-        const res = {
-            json: sinon.spy(),
-            status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-        }
+  it("should return description error message", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      body: biggerDescriptionExpense,
+    };
 
-        const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-        const find = sinon.stub(User, 'findOne').returns(mockUser);
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-        await createExpense(req, res);
+    await createExpense(req, spyResponse);
+    find.restore();
 
-        sinon.assert.match(res.json, { message: 'Invalid value' });
-
-        find.restore();
-    });})
-
-    describe('description length > 191', () => {
-    it('should return description error message', async () => {
-        const req = {
-            auth: {
-                userId: 'userId',
-            },
-            body: {
-                "description": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante. Etiam sit amet orci eget eros faucibus tincidunt. Duis leo. Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna. Sed consequat, leo eget bibendum sodales, augue velit cursus nunc,",
-                "value": 100,
-                "date": "01/01/2022"
-            },
-        };
-        const res = {
-            json: sinon.spy(),
-            status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-        }
-
-        const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-        const find = sinon.stub(User, 'findOne').returns(mockUser);
-
-        await createExpense(req, res);
-
-        sinon.assert.match(res.json, { message: 'Description must have the maximum of 191 chacacters' });
-
-        find.restore();
-    });});
-
-    describe('description length == 191', () => {
-    it('should create expense', async () => {
-            const req = {
-                auth: {
-                    userId: 'userId',
-                },
-                body: {
-                    "description": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.",
-                    "value": 100,
-                    "date": "01/01/2022"
-                },
-            };
-            const res = {
-                json: sinon.spy(),
-                status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-            }
-            const create = sinon.stub(Expense, 'create').resolves(req);
-            const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-            const find = sinon.stub(User, 'findOne').returns(mockUser);
-    
-            await createExpense(req, res);
-    
-            sinon.assert.match(res.json.body, req.body);
-    
-            find.restore();
-            create.restore();
+    sinon.assert.match(spyResponse.json, {
+      message: "Description must have the maximum of 191 chacacters",
     });
-    });
+  });
 
-    describe('date in the future', () => {
-        it('should return date error message', async () => {
-            const req = {
-                auth: {
-                    userId: 'userId',
-                },
-                body: {
-                    "description": "Test expense",
-                    "value": 100,
-                    "date": "01/01/2025"
-                },
-            };
-            const res = {
-                json: sinon.spy(),
-                status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-            }
-    
-            const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-            const find = sinon.stub(User, 'findOne').returns(mockUser);
-    
-            await createExpense(req, res);
-    
-            sinon.assert.match(res.json, { message: 'Invalid date' });
-    
-            find.restore();
-        });});
-    
+  it("should create expense (description length == 191)", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      body: limitDescriptionSize,
+    };
+    const create = sinon.stub(Expense, "create").resolves(req);
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-    describe('wrong date', () => {
-        it('should return date error message', async () => {
-            const req = {
-                auth: {
-                    userId: 'userId',
-                },
-                body: {
-                    "description": "Test expense",
-                    "value": 100,
-                    "date": "Test"
-                },
-            };
-            const res = {
-                json: sinon.spy(),
-                status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-            }
-    
-            const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-            const find = sinon.stub(User, 'findOne').returns(mockUser);
-    
-            await createExpense(req, res);
-    
-            sinon.assert.match(res.json, { message: 'Invalid date' });
-    
-            find.restore();
-        });});
-    });
+    await createExpense(req, spyResponse);
+    find.restore();
+    create.restore();
 
+    sinon.assert.match(spyResponse.json.body, req.body);
+  });
 
-describe('listExpenses', () => {
+  it("should return 'Invalid date'", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      body: dateInFutureBody,
+    };
 
-describe('correct listExpenses call', () => {
-    it('should return expenses array', async () => {
-        const req = {
-            auth: {
-                userId: 'userId',
-            },
-            body: {},
-        };
-        const res = {
-            json: sinon.spy(),
-            status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-        };
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-        const mockExpenses = [ { description: 'Test expense', value: 100, date: '01/01/2022', user: 'userId' },
-        { description: 'Test expense', value: 100, date: '01/01/2022', user: 'userId' } ];
-        const create = sinon.stub(Expense, 'find').resolves(mockExpenses);
-        const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-        const find = sinon.stub(User, 'findOne').returns(mockUser);
+    await createExpense(req, spyResponse);
+    find.restore();
 
-        await listExpenses(req, res);
+    sinon.assert.match(spyResponse.json, { message: "Invalid date" });
+  });
 
-        sinon.assert.match(res.json, mockExpenses);
+  it("should return 'Invalid date'", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      body: dateAsStringBody,
+    };
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-        create.restore();
-        find.restore();
-    });})
+    await createExpense(req, spyResponse);
+    find.restore();
 
-describe('call listExpenses without userId', () => {
-    it('should return error message', async () => {
-        const req = {
-            auth: {
-            },
-            body: {
-                "description": "Test expense",
-                "value": 1,
-                "date": "01/01/2022"
-            },
-        };
-        const res = {
-            json: sinon.spy(),
-            status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-        }
-        const find = sinon.stub(User, 'findOne').returns(null);
-
-        await listExpenses(req, res);
-
-        sinon.assert.match(res.json, { message: 'User not found' });
-
-        find.restore();
-    });})
-
-
+    sinon.assert.match(spyResponse.json, { message: "Invalid date" });
+  });
 });
 
-describe('getEspecificExpense', () => {
-    describe('correct getEspecificExpense call', () => {
-        it('should return expense', async () => {
-            const req = {
-                auth: {
-                    userId: 'userId',
-                },
-                params: {
-                    id: 'testExpenseId'
-                },
-            };
-            const res = {
-                json: sinon.spy(),
-                status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-            };
-    
-            const mockExpense = { id:'testExpenseId', description: 'Test expense', value: 100, date: '01/01/2022', user: 'userId' };
-            const create = sinon.stub(Expense, 'findOne').resolves(mockExpense);
-            const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-            const find = sinon.stub(User, 'findOne').returns(mockUser);
-    
-            await getEspecificExpense(req, res);
-    
-            sinon.assert.match(res.json, mockExpense);
-    
-            create.restore();
-            find.restore();
-        });})
+describe("listExpenses", () => {
+  it("should return expenses array", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      body: {},
+    };
+    const mockExpenses = [
+      { expenseBody, user: "userId" },
+      { expenseBody, user: "userId" },
+    ];
 
-        
-        describe('call getEspecificExpense without userId', () => {
-            it('should return error message', async () => {
-                const req = {
-                    auth: {
-                    },
-                    params: {
-                        id: 'testExpenseId'
-                    },
-                };
-                const res = {
-                    json: sinon.spy(),
-                    status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-                }
-                const find = sinon.stub(User, 'findOne').returns(null);
-        
-                await getEspecificExpense(req, res);
-        
-                sinon.assert.match(res.json, { message: 'User not found' });
-        
-                find.restore();
-            });})
-        
-        describe('call getEspecificExpense with other userId', () => {
-            it('should return error message', async () => {
-                const req = {
-                    auth: {
-                        userId: '662bb9cdf9adf0eb8f936099' //does not exist
-                    },
-                    params: {
-                        id: 'testExpenseId'
-                    },
-                };
-                const res = {
-                    json: sinon.spy(),
-                    status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-                }
+    const create = sinon.stub(Expense, "find").resolves(mockExpenses);
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-                const create = sinon.stub(Expense, 'findOne').resolves(null);
-                const mockUser = { _id: '662bb9cdf9adf0eb8f936099', email: 'testuser@email.com', password: 'testpassword' };
-                const find = sinon.stub(User, 'findOne').returns(mockUser);
-        
-                await getEspecificExpense(req, res);
-        
-                sinon.assert.match(res.json, { message: 'Expense not found' });
-        
-                create.restore();
-                find.restore();
-            });})
+    await listExpenses(req, spyResponse);
+    create.restore();
+    find.restore();
+
+    sinon.assert.match(spyResponse.json, mockExpenses);
+  });
+
+  it("should return 'User not found'", async () => {
+    const req = {
+      auth: {},
+      body: expenseBody,
+    };
+
+    const find = sinon.stub(User, "findOne").returns(null);
+
+    await listExpenses(req, spyResponse);
+    find.restore();
+
+    sinon.assert.match(spyResponse.json, { message: "User not found" });
+  });
 });
 
+describe("getEspecificExpense", () => {
+  it("should return expense", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      params: {
+        id: "testExpenseId",
+      },
+    };
 
-describe('updateExpense', () => {
-    describe('correct updateExpense call', () => {
-        it('should return the updated expense', async () => {
-            const req = {
-                auth: {
-                    userId: 'userId',
-                },
-                "params": {
-                    id: "testExpenseId"
-                },
-                body: {
-                    description: 'Test update expense',
-                    date: "01/01/2022",
-                    value: 100
-                },
-            };
-            const res = {
-                json: sinon.spy(),
-                status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-};
-    
-            const mockExpense = { id:'testExpenseId', description: 'Test expense', value: 100, date: '01/01/2022', user: 'userId' };
-            const mockUpdatedExpense = { id:'testExpenseId', description: 'Test expense', value: 300, date: '30/01/2022', user: 'userId' };
-            const findExpense = sinon.stub(Expense, 'findOne').resolves(mockExpense);
-            const update = sinon.stub(Expense, 'findOneAndUpdate').resolves(mockUpdatedExpense);
-            const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-            const find = sinon.stub(User, 'findOne').returns(mockUser);
-    
-            await updateExpense(req, res);
-    
-            sinon.assert.match(res.json, mockUpdatedExpense);
-    
-            update.restore();
-            find.restore();
-            findExpense.restore();
-            
-        });})
+    const create = sinon.stub(Expense, "findOne").resolves(expenseBody);
 
-        describe('userId doesnt exist', () => {
-            it('should return error message', async () => {
-                const req = {
-                    auth: {
-                        userId: '123',
-                    },
-                    params: {
-                        id: 'testExpenseId'
-                    },
-                    body: {
-                        "description": "Test expense",
-                        "value": 1,
-                        "date": "01/01/2022"
-                    },
-                };
-                const res = {
-                    json: sinon.spy(),
-                    status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-                }
-                const find = sinon.stub(User, 'findOne').returns(null);
-        
-                await updateExpense(req, res);
-        
-                sinon.assert.match(res.json, { message: 'User not found' });
-        
-                find.restore();
-            });})
-        
-            describe('negative expense value', () => {
-            it('should return "invalid value" message', async () => {
-                const req = {
-                    auth: {
-                        userId: 'userId',
-                    },
-                    params: {
-                        id: 'testExpenseId'
-                    },
-                    body: {
-                        "description": "Test expense",
-                        "value": -1,
-                        "date": "01/01/2022"
-                    },
-                };
-                const res = {
-                    json: sinon.spy(),
-                    status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-                }
-        
-                const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-                const find = sinon.stub(User, 'findOne').returns(mockUser);
-        
-                await updateExpense(req, res);
-        
-                sinon.assert.match(res.json, { message: 'Invalid value' });
-        
-                find.restore();
-            });})
-        
-            describe('wrong type expense value', () => {
-            it('should return "invalid value" message', async () => {
-                const req = {
-                    auth: {
-                        userId: 'userId',
-                    },
-                    params: {
-                        id: 'testExpenseId'
-                    },
-                    body: {
-                        "description": "Test expense",
-                        "value": "100",
-                        "date": "01/01/2022"
-                    },
-                };
-                const res = {
-                    json: sinon.spy(),
-                    status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-                }
-        
-                const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-                const find = sinon.stub(User, 'findOne').returns(mockUser);
-        
-                await updateExpense(req, res);
-        
-                sinon.assert.match(res.json, { message: 'Invalid value' });
-        
-                find.restore();
-            });})
-        
-            describe('description length > 191', () => {
-            it('should return description error message', async () => {
-                const req = {
-                    auth: {
-                        userId: 'userId',
-                    },
-                    params: {
-                        id: 'testExpenseId'
-                    },
-                    body: {
-                        "description": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum. Nam quam nunc, blandit vel, luctus pulvinar, hendrerit id, lorem. Maecenas nec odio et ante tincidunt tempus. Donec vitae sapien ut libero venenatis faucibus. Nullam quis ante. Etiam sit amet orci eget eros faucibus tincidunt. Duis leo. Sed fringilla mauris sit amet nibh. Donec sodales sagittis magna. Sed consequat, leo eget bibendum sodales, augue velit cursus nunc,",
-                        "value": 100,
-                        "date": "01/01/2022"
-                    },
-                };
-                const res = {
-                    json: sinon.spy(),
-                    status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-                }
-        
-                const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-                const find = sinon.stub(User, 'findOne').returns(mockUser);
-        
-                await updateExpense(req, res);
-        
-                sinon.assert.match(res.json, { message: 'Description must have the maximum of 191 chacacters' });
-        
-                find.restore();
-            });});
-        
-            describe('description length == 191', () => {
-            it('should create expense', async () => {
-                    const req = {
-                        auth: {
-                            userId: 'userId',
-                        },
-                        params: {
-                            id: 'testExpenseId'
-                        },
-                        body: {
-                            "description": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.",
-                            "value": 100,
-                            "date": "01/01/2022"
-                        },
-                    };
-                    const res = {
-                        json: sinon.spy(),
-                        status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-                    }
-                    const mockExpense = { id:'testExpenseId', description: 'Test expense', value: 100, date: '01/01/2022', user: 'userId' };
-                    const mockUpdatedExpense = { id:'testExpenseId', "description": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.",
-                     value: 300, date: '30/01/2022', user: 'userId' };
-                    const findExpense = sinon.stub(Expense, 'findOne').resolves(mockExpense);
-                    const update = sinon.stub(Expense, 'findOneAndUpdate').resolves(mockUpdatedExpense);
-                    const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-                    const find = sinon.stub(User, 'findOne').returns(mockUser);
-            
-                    await updateExpense(req, res);
-            
-                    sinon.assert.match(res.json, mockUpdatedExpense);
-            
-                    find.restore();
-                    findExpense.restore();
-                    update.restore();
-            });
-            });
-        
-            describe('date in the future', () => {
-                it('should return date error message', async () => {
-                    const req = {
-                        auth: {
-                            userId: 'userId',
-                        },
-                        params: {
-                            id: 'testExpenseId'
-                        },
-                        body: {
-                            "description": "Test expense",
-                            "value": 100,
-                            "date": "01/01/2025"
-                        },
-                    };
-                    const res = {
-                        json: sinon.spy(),
-                        status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-                    }
-            
-                    const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-                    const find = sinon.stub(User, 'findOne').returns(mockUser);
-            
-                    await updateExpense(req, res);
-            
-                    sinon.assert.match(res.json, { message: 'Invalid date' });
-            
-                    find.restore();
-                });});
-            
-        
-            describe('wrong date', () => {
-                it('should return date error message', async () => {
-                    const req = {
-                        auth: {
-                            userId: 'userId',
-                        },
-                        params: {
-                            id: 'testExpenseId'
-                        },
-                        body: {
-                            "description": "Test expense",
-                            "value": 100,
-                            "date": "Test"
-                        },
-                    };
-                    const res = {
-                        json: sinon.spy(),
-                        status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-                    }
-            
-                    const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-                    const find = sinon.stub(User, 'findOne').returns(mockUser);
-            
-                    await updateExpense(req, res);
-            
-                    sinon.assert.match(res.json, { message: 'Invalid date' });
-            
-                    find.restore();
-                });});
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-                describe('update expense from other user', () => {
-                    it('should return error message', async () => {
-                        const req = {
-                            auth: {
-                                userId: '662bb9cdf9adf0eb8f936099' //does not exist
-                            },
-                            params: {
-                                id: 'testExpenseId'
-                            },body: {
-                                "description": "Test expense",
-                                "value": 100,
-                                "date": "01/01/2024"
-                            },
-                        };
-                        const res = {
-                            json: sinon.spy(),
-                            status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-                        }
-                
-                        const create = sinon.stub(Expense, 'findOne').resolves(null);
-                        const mockUser = { _id: '662bb9cdf9adf0eb8f936099', email: 'testuser@email.com', password: 'testpassword' };
-                        const find = sinon.stub(User, 'findOne').returns(mockUser);
-                        const update = sinon.stub(Expense, 'findOneAndUpdate').resolves(null);
-                
-                        await updateExpense(req, res);
-                
-                        sinon.assert.match(res.json, { message: 'Expense not found' });
-                
-                        create.restore();
-                        find.restore();
-                        update.restore();
-                    });
-                });
+    await getEspecificExpense(req, spyResponse);
+    create.restore();
+    find.restore();
 
+    sinon.assert.match(spyResponse.json, expenseBody);
+  });
+
+  it("should return 'User not found'", async () => {
+    const req = {
+      auth: {},
+      params: {
+        id: "testExpenseId",
+      },
+    };
+    const find = sinon.stub(User, "findOne").returns(null);
+
+    await getEspecificExpense(req, spyResponse);
+    find.restore();
+
+    sinon.assert.match(spyResponse.json, { message: "User not found" });
+  });
+
+  it("should return 'Expense not found'", async () => {
+    const req = {
+      auth: {
+        userId: "662bb9cdf9adf0eb8f936099", //does not exist
+      },
+      params: {
+        id: "testExpenseId",
+      },
+    };
+    const create = sinon.stub(Expense, "findOne").resolves(null);
+    const mockUser = {
+      _id: "662bb9cdf9adf0eb8f936099",
+      email: "testuser@email.com",
+      password: "testpassword",
+    };
+    const find = sinon.stub(User, "findOne").returns(mockUser);
+
+    await getEspecificExpense(req, spyResponse);
+    create.restore();
+    find.restore();
+
+    sinon.assert.match(spyResponse.json, { message: "Expense not found" });
+  });
 });
 
-describe('deleteExpense', () => {
+describe("updateExpense", () => {
+  it("should return the updated expense", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      params: {
+        id: "testExpenseId",
+      },
+      body: expenseBody,
+    };
+    const mockUpdatedExpense = {
+      id: "testExpenseId",
+      description: "Test expense",
+      value: 300,
+      date: "30/01/2022",
+      user: "userId",
+    };
+    const findExpense = sinon.stub(Expense, "findOne").resolves(expenseBody);
+    const update = sinon
+      .stub(Expense, "findOneAndUpdate")
+      .resolves(mockUpdatedExpense);
 
-describe('correct updateExpense call', () => {
-        it('should return the updated expense', async () => {
-            const req = {
-                auth: {
-                    userId: 'userId',
-                },
-                params: {
-                    id: "testExpenseId"
-                },
-                body: {
-                    description: 'Test delete expense',
-                    date: "01/01/2022",
-                    value: 100
-                },
-            };
-            const res = {
-                json: sinon.spy(),
-                status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-};
-    
-            const mockExpense = { id:'testExpenseId', description: 'Test expense', value: 100, date: '01/01/2022', user: 'userId', deleted: false};
-            const mockUpdatedExpense = { id:'testExpenseId', description: 'Test expense', value: 100, date: '01/01/2022', user: 'userId', deleted: true};
-            const findExpense = sinon.stub(Expense, 'findOne').resolves(mockExpense);
-            const update = sinon.stub(Expense, 'findOneAndUpdate').resolves(mockUpdatedExpense);
-            const mockUser = { _id: 'userId', email: 'testuser@email.com', password: 'testpassword' };
-            const find = sinon.stub(User, 'findOne').returns(mockUser);
-    
-            await deleteExpense(req, res);
-    
-            sinon.assert.match(res.json, {message: 'Expense deleted!'});
-    
-            update.restore();
-            find.restore();
-            findExpense.restore();
-            
-        });})
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-describe('delete expense from other user', () => {
-    it('should return error message', async () => {
-        const req = {
-            auth: {
-                userId: '662bb9cdf9adf0eb8f936099' //does not exist
-            },
-            params: {
-                id: 'testExpenseId'
-            },
-        };
-        const res = {
-            json: sinon.spy(),
-            status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-        }
+    await updateExpense(req, spyResponse);
+    update.restore();
+    find.restore();
+    findExpense.restore();
 
-        const create = sinon.stub(Expense, 'findOne').resolves(null);
-        const mockUser = { _id: '662bb9cdf9adf0eb8f936099', email: 'testuser@email.com', password: 'testpassword' };
-        const find = sinon.stub(User, 'findOne').returns(mockUser);
-        const update = sinon.stub(Expense, 'findOneAndUpdate').resolves(null);
+    sinon.assert.match(spyResponse.json, mockUpdatedExpense);
+  });
 
-        await deleteExpense(req, res);
+  it("should return 'User not found'", async () => {
+    const req = {
+      auth: {
+        userId: "123",
+      },
+      params: {
+        id: "testExpenseId",
+      },
+      body: {
+        description: "Test expense",
+        value: 1,
+        date: "01/01/2022",
+      },
+    };
+    const find = sinon.stub(User, "findOne").returns(null);
 
-        sinon.assert.match(res.json, { message: 'Expense not found' });
+    await updateExpense(req, spyResponse);
+    find.restore();
 
-        create.restore();
-        find.restore();
+    sinon.assert.match(spyResponse.json, { message: "User not found" });
+  });
+
+  it('should return "Invalid value message', async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      params: {
+        id: "testExpenseId",
+      },
+      body: negativeValueExpense,
+    };
+
+    const find = sinon.stub(User, "findOne").returns(mockUser);
+
+    await updateExpense(req, spyResponse);
+    find.restore();
+
+    sinon.assert.match(spyResponse.json, { message: "Invalid value" });
+  });
+
+  it('should return "Invalid value" message', async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      params: {
+        id: "testExpenseId",
+      },
+      body: wrongTypeValueExpense,
+    };
+
+    const find = sinon.stub(User, "findOne").returns(mockUser);
+
+    await updateExpense(req, spyResponse);
+    find.restore();
+
+    sinon.assert.match(spyResponse.json, { message: "Invalid value" });
+  });
+
+  it("should return 'Description must have the maximum of 191 chacacters'", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      params: {
+        id: "testExpenseId",
+      },
+      body: biggerDescriptionExpense,
+    };
+
+    const find = sinon.stub(User, "findOne").returns(mockUser);
+
+    await updateExpense(req, spyResponse);
+    find.restore();
+
+    sinon.assert.match(spyResponse.json, {
+      message: "Description must have the maximum of 191 chacacters",
     });
+  });
+
+  it("should create expense (Description equals 191 characters)", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      params: {
+        id: "testExpenseId",
+      },
+      body: limitDescriptionSize,
+    };
+    const mockUpdatedExpense = {
+      id: "testExpenseId",
+      description:
+        "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.",
+      value: 300,
+      date: "30/01/2022",
+      user: "userId",
+    };
+    const findExpense = sinon.stub(Expense, "findOne").resolves(expenseBody);
+    const update = sinon
+      .stub(Expense, "findOneAndUpdate")
+      .resolves(mockUpdatedExpense);
+
+    const find = sinon.stub(User, "findOne").returns(mockUser);
+
+    await updateExpense(req, spyResponse);
+    find.restore();
+    findExpense.restore();
+    update.restore();
+    sinon.assert.match(spyResponse.json, mockUpdatedExpense);
+  });
+
+  it("should return 'Invalid date' message", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      params: {
+        id: "testExpenseId",
+      },
+      body: dateInFutureBody,
+    };
+
+    const find = sinon.stub(User, "findOne").returns(mockUser);
+
+    await updateExpense(req, spyResponse);
+    find.restore();
+
+    sinon.assert.match(spyResponse.json, { message: "Invalid date" });
+  });
+
+  it("should return 'Invalid date' message", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      params: {
+        id: "testExpenseId",
+      },
+      body: dateAsStringBody,
+    };
+
+    const find = sinon.stub(User, "findOne").returns(mockUser);
+
+    await updateExpense(req, spyResponse);
+    find.restore();
+
+    sinon.assert.match(spyResponse.json, { message: "Invalid date" });
+  });
+
+  it("should return error message", async () => {
+    const req = {
+      auth: {
+        userId: "662bb9cdf9adf0eb8f936099", //does not exist
+      },
+      params: {
+        id: "testExpenseId",
+      },
+      body: {
+        description: "Test expense",
+        value: 100,
+        date: "01/01/2024",
+      },
+    };
+
+    const create = sinon.stub(Expense, "findOne").resolves(null);
+    const mockUser = {
+      _id: "662bb9cdf9adf0eb8f936099",
+      email: "testuser@email.com",
+      password: "testpassword",
+    };
+    const find = sinon.stub(User, "findOne").returns(mockUser);
+    const update = sinon.stub(Expense, "findOneAndUpdate").resolves(null);
+
+    await updateExpense(req, spyResponse);
+    create.restore();
+    find.restore();
+    update.restore();
+    sinon.assert.match(spyResponse.json, { message: "Expense not found" });
+  });
 });
 
-describe('delete expense without valid user', () => {
-    it('should return error message', async () => {
-        const req = {
-            auth: {
-                userId: '662bb9cdf9adf0eb8f936099' //does not exist
-            },
-            params: {
-                id: 'testExpenseId'
-            },
-        };
-        const res = {
-            json: sinon.spy(),
-            status: function(s) {this.statusCode = s;this.json = (message) => {this.json = message; return this;};  return this;},
-        }
-        const find = sinon.stub(User, 'findOne').returns(null);
+describe("deleteExpense", () => {
+  it("should return the updated expense", async () => {
+    const req = {
+      auth: {
+        userId: "userId",
+      },
+      params: {
+        id: "testExpenseId",
+      },
+      body: {
+        description: "Test delete expense",
+        date: "01/01/2022",
+        value: 100,
+      },
+    };
 
-        await deleteExpense(req, res);
+    const mockUpdatedExpense = {
+      id: "testExpenseId",
+      description: "Test expense",
+      value: 100,
+      date: "01/01/2022",
+      user: "userId",
+      deleted: true,
+    };
+    const findExpense = sinon.stub(Expense, "findOne").resolves(expenseBody);
+    const update = sinon
+      .stub(Expense, "findOneAndUpdate")
+      .resolves(mockUpdatedExpense);
 
-        sinon.assert.match(res.json, { message: 'User not found' });
+    const find = sinon.stub(User, "findOne").returns(mockUser);
 
-        find.restore();
-    });
-});
+    await deleteExpense(req, spyResponse);
+    update.restore();
+    find.restore();
+    findExpense.restore();
+    sinon.assert.match(spyResponse.json, { message: "Expense deleted!" });
+  });
 
+  it("should return 'Expense not found' message", async () => {
+    const req = {
+      auth: {
+        userId: "662bb9cdf9adf0eb8f936099", //does not exist
+      },
+      params: {
+        id: "testExpenseId",
+      },
+    };
 
+    const create = sinon.stub(Expense, "findOne").resolves(null);
+    const mockUser = {
+      _id: "662bb9cdf9adf0eb8f936099",
+      email: "testuser@email.com",
+      password: "testpassword",
+    };
+    const find = sinon.stub(User, "findOne").returns(mockUser);
+    const update = sinon.stub(Expense, "findOneAndUpdate").resolves(null);
 
+    await deleteExpense(req, spyResponse);
+    create.restore();
+    find.restore();
+    sinon.assert.match(spyResponse.json, { message: "Expense not found" });
+  });
+
+  it("should return 'User not found' message", async () => {
+    const req = {
+      auth: {
+        userId: "662bb9cdf9adf0eb8f936099", //does not exist
+      },
+      params: {
+        id: "testExpenseId",
+      },
+    };
+
+    const find = sinon.stub(User, "findOne").returns(null);
+
+    await deleteExpense(req, spyResponse);
+    find.restore();
+    sinon.assert.match(spyResponse.json, { message: "User not found" });
+  });
 });
