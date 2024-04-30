@@ -1,6 +1,3 @@
-Sure! Here's a sample README file for your project:
-
----
 
 # Expense CRUD API
 
